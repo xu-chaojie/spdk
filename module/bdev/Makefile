@@ -29,6 +29,8 @@ DIRS-$(CONFIG_RBD) += rbd
 
 DIRS-$(CONFIG_DAOS) += daos
 
+DIRS-$(CONFIG_CBD) += cbd
+
 .PHONY: all clean $(DIRS-y)
 
 all: $(DIRS-y)
