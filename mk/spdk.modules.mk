@@ -103,6 +103,19 @@ BLOCKDEV_MODULES_LIST += bdev_rbd
 BLOCKDEV_MODULES_PRIVATE_LIBS += -lrados -lrbd
 endif
 
+ifeq ($(CONFIG_CBD),y)
+CURVE_LIBS= -lcbd -lcurve_client -lcurve_common -lcurve_auth -lcurve_concurrent \
+    -lnameserver2_proto -ltopology_proto -lchunkserver-protos -lbrpc -lbutil -lbvar \
+    -lbthread -lcc_brpc_internal_proto -ljson2pb -lmcpack2pb -lcc_brpc_idl_options_proto \
+    -lcommon_proto -lprotobuf -lprotobuf_lite -lrt -lssl -lcrypto \
+    -lleveldb -lgflags -lglog -lucp -luct -lucm -lucs -lucs_signal -lz -lstdc++ -ldl -lpthread
+BLOCKDEV_MODULES_LIST += bdev_cbd
+CURVE_LIB_DIR=/usr/lib/curve
+UCX_LIB_DIR=/usr/local/ucx/lib
+BLOCKDEV_MODULES_PRIVATE_LIBS += -L${CURVE_LIB_DIR} ${CURVE_LIBS} -L${UCX_LIB_DIR}
+LDFLAGS += -Wl,-rpath=${CURVE_LIB_DIR} -Wl,-rpath=${UCX_LIB_DIR}
+endif
+
 ifeq ($(CONFIG_PMDK),y)
 BLOCKDEV_MODULES_LIST += bdev_pmem
 BLOCKDEV_MODULES_PRIVATE_LIBS += -lpmemblk -lpmem

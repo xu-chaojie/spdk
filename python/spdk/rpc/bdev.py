@@ -1009,6 +1009,37 @@ def bdev_rbd_resize(client, name, new_size):
             }
     return client.call('bdev_rbd_resize', params)
 
+def bdev_cbd_create(client, cbd, blocksize=4096, exclusive=1, name=None):
+    """Create a Curve CBD block device.
+
+    Args:
+        name: name of block device (optional)
+        cbd: Curve CBD image path
+        blocksize: block size of CBD volume
+        exclusve: share or exclusive 
+
+    Returns:
+        Name of created block device.
+    """
+    params = {
+        'cbd': cbd,
+        'blocksize': blocksize,
+        'exclusive': exclusive
+    }
+
+    if name:
+        params['name'] = name
+
+    return client.call('bdev_cbd_create', params)
+
+def bdev_cbd_delete(client, name):
+    """Remove cbd bdev from the system.
+
+    Args:
+        name: name of cbd bdev to delete
+    """
+    params = {'name': name}
+    return client.call('bdev_cbd_delete', params)
 
 def bdev_error_create(client, base_name):
     """Construct an error injection block device.

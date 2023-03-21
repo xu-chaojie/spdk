@@ -67,7 +67,9 @@ function usage() {
 	echo " --with-reduce             Build vbdev compression module."
 	echo " --without-reduce          No path required."
 	echo " --with-rbd                Build Ceph RBD bdev module."
+	echo " --with-cbd                Build Curve CBD bdev module."
 	echo " --without-rbd             No path required."
+	echo " --without-cbd             No path required."
 	echo " --with-rdma[=DIR]         Build RDMA transport for NVMf target and initiator."
 	echo " --without-rdma            Accepts optional RDMA provider name. Can be \"verbs\" or \"mlx5_dv\"."
 	echo "                           If no provider specified, \"verbs\" provider is used by default."
@@ -451,6 +453,12 @@ for i in "$@"; do
 			;;
 		--without-rbd)
 			CONFIG[RBD]=n
+			;;
+		--with-cbd)
+			CONFIG[CBD]=y
+			;;
+		--without-cbd)
+			CONFIG[CBD]=n
 			;;
 		--with-rdma=*)
 			CONFIG[RDMA]=y

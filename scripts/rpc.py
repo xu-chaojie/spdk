@@ -918,6 +918,28 @@ if __name__ == "__main__":
     p.add_argument('new_size', help='new bdev size for resize operation. The unit is MiB')
     p.set_defaults(func=bdev_rbd_resize)
 
+    def bdev_cbd_create(args):
+        print_json(rpc.bdev.bdev_cbd_create(args.client,
+                                            name=args.name,
+                                            cbd=args.cbd,
+                                            blocksize=args.blocksize,
+                                            exclusive=args.exclusive
+                                            ))
+    p = subparsers.add_parser('bdev_cbd_create', help='Add a bdev with curve cbd backend')
+    p.add_argument('-b', '--name', help="Name of the bdev", required=False)
+    p.add_argument('--cbd', help='cbd image path')
+    p.add_argument('--exclusive', help='share or exclusive', type=int, default=0, required=False)
+    p.add_argument('--blocksize', help='cbd block size', type=int, default=4096, required=False)
+    p.set_defaults(func=bdev_cbd_create)
+
+    def bdev_cbd_delete(args):
+        rpc.bdev.bdev_cbd_delete(args.client,
+                                 name=args.name)
+
+    p = subparsers.add_parser('bdev_cbd_delete', help='Delete a cbd bdev')
+    p.add_argument('name', help='cbd bdev name')
+    p.set_defaults(func=bdev_cbd_delete)
+
     def bdev_delay_create(args):
         print_json(rpc.bdev.bdev_delay_create(args.client,
                                               base_bdev_name=args.base_bdev_name,

@@ -129,6 +129,8 @@ CONFIG_FC_PATH=
 # Requires librbd development libraries
 CONFIG_RBD=n
 
+CONFIG_CBD=n
+
 # Build vhost library.
 CONFIG_VHOST=y
 
