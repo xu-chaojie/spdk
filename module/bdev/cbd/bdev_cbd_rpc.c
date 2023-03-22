@@ -147,3 +147,46 @@ rpc_bdev_cbd_delete(struct spdk_jsonrpc_request *request,
 	free_rpc_bdev_cbd_delete(&req);
 }
 SPDK_RPC_REGISTER("bdev_cbd_delete", rpc_bdev_cbd_delete, SPDK_RPC_RUNTIME)
+
+struct rpc_bdev_cbd_refresh {
+	char *name;
+};
+
+static void
+free_rpc_bdev_cbd_refresh(struct rpc_bdev_cbd_refresh *req)
+{
+	free(req->name);
+}
+
+static const struct spdk_json_object_decoder rpc_bdev_cbd_refresh_decoders[] = {
+	{"name", offsetof(struct rpc_bdev_cbd_refresh, name), spdk_json_decode_string},
+};
+
+static void
+rpc_bdev_cbd_refresh(struct spdk_jsonrpc_request *request,
+		    const struct spdk_json_val *params)
+{
+	struct rpc_bdev_cbd_refresh req = {NULL};
+	int rc = 0;
+
+	if (spdk_json_decode_object(params, rpc_bdev_cbd_refresh_decoders,
+				    SPDK_COUNTOF(rpc_bdev_cbd_refresh_decoders),
+				    &req)) {
+		spdk_jsonrpc_send_error_response(request, 
+		    SPDK_JSONRPC_ERROR_INTERNAL_ERROR,
+		    "spdk_json_decode_object failed");
+		goto cleanup;
+	}
+
+	rc = bdev_cbd_refresh(req.name);
+	if (rc) {
+		spdk_jsonrpc_send_error_response(request, rc, spdk_strerror(-rc));
+		goto cleanup;
+	}
+
+	spdk_jsonrpc_send_bool_response(request, true);
+
+cleanup:
+	free_rpc_bdev_cbd_refresh(&req);
+}
+SPDK_RPC_REGISTER("bdev_cbd_refresh", rpc_bdev_cbd_refresh, SPDK_RPC_RUNTIME)

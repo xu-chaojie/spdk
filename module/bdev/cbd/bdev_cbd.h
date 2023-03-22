@@ -67,6 +67,8 @@ int bdev_cbd_create(struct spdk_bdev **bdev, const char *name,
 void bdev_cbd_delete(const char *name, spdk_delete_cbd_complete cb_fn,
 	void *cb_arg);
 
+int bdev_cbd_refresh(const char *name);
+
 #ifdef __cplusplus
 }
 #endif

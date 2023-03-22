@@ -1041,6 +1041,15 @@ def bdev_cbd_delete(client, name):
     params = {'name': name}
     return client.call('bdev_cbd_delete', params)
 
+def bdev_cbd_refresh(client, name):
+    """Refres h cbd bdev size from the system.
+
+    Args:
+        name: name of cbd bdev to refresh
+    """
+    params = {'name': name}
+    return client.call('bdev_cbd_refresh', params)
+
 def bdev_error_create(client, base_name):
     """Construct an error injection block device.
 

@@ -940,6 +940,13 @@ if __name__ == "__main__":
     p.add_argument('name', help='cbd bdev name')
     p.set_defaults(func=bdev_cbd_delete)
 
+    def bdev_cbd_refresh(args):
+        rpc.bdev.bdev_cbd_refresh(args.client, name=args.name)
+
+    p = subparsers.add_parser('bdev_cbd_refresh', help='Refresh size of cbd bdev')
+    p.add_argument('name', help='cbd bdev name')
+    p.set_defaults(func=bdev_cbd_refresh)
+
     def bdev_delay_create(args):
         print_json(rpc.bdev.bdev_delay_create(args.client,
                                               base_bdev_name=args.base_bdev_name,
