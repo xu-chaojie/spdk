@@ -195,7 +195,8 @@ bdev_cbd_init_context(void *arg)
 		SPDK_ERRLOG("Invalid cbd name=%p\n", cbd->cbd_name);
 		return NULL;
 	}
-
+	/* overwrite cbd_name now */
+	strcpy(cbd->cbd_name, path);
 	openflags.exclusive = cbd->exclusive ? true : false;
 	curve_fd = g_curve->Open(path, openflags);
 	if (curve_fd < 0) {
@@ -553,20 +554,14 @@ static void *
 bdev_cbd_handle(void *arg)
 {
 	struct bdev_cbd *cbd = (struct bdev_cbd *) arg;
-	char path[1024];
 	int curve_fd;
 	OpenFlags openflags;
 	void *ret = arg;
 
-	if (curvedev_get_path(cbd->cbd_name, path)) {
-		SPDK_ERRLOG("Invalid cbd name=%p\n", cbd->cbd_name);
-		return NULL;
-	}
-
 	openflags.exclusive = cbd->exclusive ? true : false;
-	curve_fd = g_curve->Open(path, openflags);
+	curve_fd = g_curve->Open(cbd->cbd_name, openflags);
 	if (curve_fd < 0) {
-		SPDK_ERRLOG("Can not open curve volume %s, %s\n", path,
+		SPDK_ERRLOG("Can not open curve volume %s, %s\n", cbd->cbd_name,
 			    strerror(errno));
 		return NULL;
 	}
@@ -795,6 +790,60 @@ bdev_cbd_delete(const char *name, spdk_delete_cbd_complete cb_fn, void *cb_arg)
 	} else {
 		SPDK_NOTICELOG("Deleted %s cbd bdev\n", name);
 	}
+}
+
+static void
+dummy_bdev_event_cb(enum spdk_bdev_event_type type, struct spdk_bdev *bdev, void *ctx)
+{
+}
+
+int
+bdev_cbd_refresh(const char *name)
+{
+	struct spdk_bdev_desc *desc = NULL;
+	struct spdk_bdev *bdev = NULL;
+	struct bdev_cbd *cbd = NULL;
+	int rc = 0;
+	int64_t new_size_in_bytes = 0;
+	uint64_t new_size_in_blocks = 0;
+
+	rc = spdk_bdev_open_ext(name, false, dummy_bdev_event_cb, NULL, &desc);
+	if (rc != 0) {
+		return rc;
+	}
+
+	bdev = spdk_bdev_desc_get_bdev(desc);
+	if (bdev->module != &cbd_if) {
+		spdk_bdev_close(desc);
+		return -EINVAL;
+	}
+
+	cbd = (struct bdev_cbd *)bdev->ctxt;
+	new_size_in_bytes = g_curve->StatFile(cbd->cbd_name);
+	if (new_size_in_bytes < 0) {
+		SPDK_ERRLOG("Failed to StatFile cbd %p\n", cbd->cbd_name);
+		spdk_bdev_close(desc);
+		return -EINVAL;
+	}
+	new_size_in_blocks = new_size_in_bytes / bdev->blocklen;
+	if (new_size_in_blocks < bdev->blockcnt) {
+		SPDK_ERRLOG("The new bdev size must be larger than current bdev size.\n");
+		spdk_bdev_close(desc);
+		return -EINVAL;
+	} else if (new_size_in_blocks == bdev->blockcnt) {
+		SPDK_NOTICELOG("The new bdev size is same as current bdev size.\n");
+		spdk_bdev_close(desc);
+		return 0;
+	}
+	rc = spdk_bdev_notify_blockcnt_change(bdev, new_size_in_blocks);
+	if (rc != 0) {
+		SPDK_ERRLOG("failed to notify block cnt change.\n");
+	} else {
+		SPDK_NOTICELOG("The new bdev size is changed to %lld blocks.\n",
+			(long long)new_size_in_blocks);
+	}
+	spdk_bdev_close(desc);
+	return rc;
 }
 
 static int
