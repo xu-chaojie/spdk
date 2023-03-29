@@ -87,40 +87,6 @@ struct bdev_cbd_io {
 	int			auto_buf;
 };
 
-static void
-copy_from_iov(void *_buf, const struct iovec *iov, int iovcnt, size_t len)
-{
-	char *buf = (char *)_buf;
-	size_t off = 0;
-	int i = 0;
-
-	while (len > 0 && i < iovcnt) {
-		size_t to_copy = spdk_min(iov[i].iov_len, len);
-		memcpy(buf+off, iov[i].iov_base, to_copy);
-		off += to_copy;
-		len -= to_copy;
-		i++;
-	}
-	SPDK_STATIC_ASSERT(len == 0, "Invalid iovcnt and len arguments");
-}
-
-static void
-copy_to_iov(struct iovec *iov, int iovcnt, size_t len, const void *_buf)
-{
-	const char *buf = (const char *)_buf;
-	size_t off = 0;
-	int i = 0;
-
-	while (len > 0 && i < iovcnt) {
-		size_t to_copy = spdk_min(iov[i].iov_len, len);
-		memcpy(iov[i].iov_base, buf, to_copy);
-		off += to_copy;
-		len -= to_copy;
-		i++;
-	}
-	SPDK_STATIC_ASSERT(len == 0, "Invalid iovcnt and len arguments");
-}
-
 static int
 init_curve(void)
 {
@@ -260,8 +226,9 @@ bdev_cbd_io_complete(struct spdk_bdev_io *bdev_io, enum spdk_bdev_io_status stat
 	if (cbd_io->auto_buf) {
 		if ((status == SPDK_BDEV_IO_STATUS_SUCCESS) &&
 		    (cbd_io->curve.op == LIBCURVE_OP_READ)) {
-			copy_to_iov(bdev_io->u.bdev.iovs, bdev_io->u.bdev.iovcnt,
-				cbd_io->curve.length, cbd_io->curve.buf);
+			spdk_copy_buf_to_iovs(bdev_io->u.bdev.iovs,
+				bdev_io->u.bdev.iovcnt,
+				cbd_io->curve.buf, cbd_io->curve.length);
 		}
 		free(cbd_io->curve.buf);
 	}
@@ -328,7 +295,7 @@ bdev_cbd_start_aio(struct bdev_cbd *cbd, struct spdk_bdev_io *bdev_io,
 	} else if (bdev_io->type == SPDK_BDEV_IO_TYPE_WRITE) {
 		cbd_io->curve.op = LIBCURVE_OP_WRITE;
 		if (cbd_io->auto_buf)
-			copy_from_iov(cbd_io->curve.buf, iov, iovcnt, len);
+			spdk_copy_iovs_to_buf(cbd_io->curve.buf, len, iov, iovcnt);
 		if (g_curve->AioWrite(cbd->curve_fd, &cbd_io->curve, UserDataType::RawBuffer)) {
 			bdev_cbd_io_complete(bdev_io, SPDK_BDEV_IO_STATUS_AIO_ERROR);
 		}
