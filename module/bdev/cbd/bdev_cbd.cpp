@@ -445,7 +445,6 @@ _bdev_cbd_submit_request(void *io)
 		break;
 
 	case SPDK_BDEV_IO_TYPE_WRITE:
-	case SPDK_BDEV_IO_TYPE_WRITE_ZEROES:
 		bdev_cbd_start_aio(cbd,
 				   bdev_io,
 				   bdev_io->u.bdev.iovs,
