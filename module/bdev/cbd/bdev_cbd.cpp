@@ -205,7 +205,13 @@ bdev_cbd_init_context(void *arg)
 	}
 
 	/* Save size info */
-	cbd->curve_size = g_curve->StatFile(path);
+    FileStatInfo statInfo;
+    int ret = g_curve->StatFile(curve_fd, &statInfo);
+    if (ret < 0) {
+        SPDK_ERRLOG("Stat Curve File %s Failed!\n", path);
+        return NULL;
+    }
+	cbd->curve_size = statInfo.length;
 	if (cbd->curve_size < 0) {
 		g_curve->Close(curve_fd);
 		SPDK_ERRLOG("Failed to StateFile %s\n", path);
@@ -819,7 +825,13 @@ bdev_cbd_refresh(const char *name)
 	}
 
 	cbd = (struct bdev_cbd *)bdev->ctxt;
-	new_size_in_bytes = g_curve->StatFile(cbd->cbd_name);
+    FileStatInfo statInfo;
+    int ret = g_curve->StatFile(cbd->curve_fd, &statInfo);
+    if (ret < 0) {
+        SPDK_ERRLOG("Stat Curve File %s Failed!\n", cbd->cbd_name);
+		return -EINVAL;
+    }
+	new_size_in_bytes = statInfo.length;
 	if (new_size_in_bytes < 0) {
 		SPDK_ERRLOG("Failed to StatFile cbd %p\n", cbd->cbd_name);
 		spdk_bdev_close(desc);

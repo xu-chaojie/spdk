@@ -108,7 +108,7 @@ CURVE_LIBS= -lcbd -lcurve_client -lcurve_common -lcurve_auth -lcurve_concurrent 
     -lnameserver2_proto -ltopology_proto -lchunkserver-protos -lbrpc -lbutil -lbvar \
     -lbthread -lcc_brpc_internal_proto -ljson2pb -lmcpack2pb -lcc_brpc_idl_options_proto \
     -lcommon_proto -lprotobuf -lprotobuf_lite -lrt -lssl -lcrypto \
-    -lleveldb -lgflags -lglog -lucp -luct -lucm -lucs -lucs_signal -lz -lstdc++ -ldl -lpthread
+    -lleveldb -lgflags -lglog -lz -lstdc++ -ldl -lpthread
 BLOCKDEV_MODULES_LIST += bdev_cbd
 CURVE_LIB_DIR=/usr/lib/curve
 UCX_LIB_DIR=/usr/local/ucx/lib
