@@ -231,6 +231,16 @@ def bdev_ocf_set_seqcutoff(client, name, policy, threshold, promotion_count):
 
     return client.call('bdev_ocf_set_seqcutoff', params)
 
+def bdev_ocf_flush(client, name):
+    """Flush an OCF device
+
+    Args:
+        name: name of OCF bdev
+
+    """
+    params = {'name': name}
+
+    return client.call('bdev_ocf_flush', params)
 
 def bdev_malloc_create(client, num_blocks, block_size, name=None, uuid=None, optimal_io_boundary=None):
     """Construct a malloc block device.

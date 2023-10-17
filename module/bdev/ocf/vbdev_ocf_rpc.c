@@ -173,6 +173,79 @@ end:
 SPDK_RPC_REGISTER("bdev_ocf_delete", rpc_bdev_ocf_delete, SPDK_RPC_RUNTIME)
 
 /* Structure to hold the parameters for this RPC method. */
+struct rpc_bdev_ocf_flush {
+    char *name;             /* main vbdev name */
+    int complete;
+    int status;
+};
+
+static void
+free_rpc_bdev_ocf_flush(struct rpc_bdev_ocf_flush *r)
+{
+    free(r->name);
+}
+
+/* Structure to decode the input parameters for this RPC method. */
+static const struct spdk_json_object_decoder rpc_bdev_ocf_flush_decoders[] = {
+    {"name", offsetof(struct rpc_bdev_ocf_flush, name), spdk_json_decode_string},
+};
+
+static void
+flush_cb(void *cb_arg, int status)
+{
+    struct rpc_bdev_ocf_flush *req = (struct rpc_bdev_ocf_flush *)cb_arg;
+
+    req->status = status;
+    req->complete = 1;
+}
+
+static void
+rpc_bdev_ocf_flush(struct spdk_jsonrpc_request *request,
+        const struct spdk_json_val *params)
+{
+    struct rpc_bdev_ocf_flush req;
+    struct vbdev_ocf *vbdev;
+    int status;
+
+    req.name = NULL;
+    status = spdk_json_decode_object(params, rpc_bdev_ocf_flush_decoders,
+            SPDK_COUNTOF(rpc_bdev_ocf_flush_decoders),
+            &req);
+    if (status) {
+        spdk_jsonrpc_send_error_response(request, SPDK_JSONRPC_ERROR_INVALID_PARAMS,
+                "Invalid parameters");
+        goto end;
+    }
+
+    vbdev = vbdev_ocf_get_by_name(req.name);
+    if (vbdev == NULL) {
+        spdk_jsonrpc_send_error_response(request, SPDK_JSONRPC_ERROR_INVALID_PARAMS,
+                spdk_strerror(ENODEV));
+        goto end;
+    }
+    req.complete = 0;
+    req.status = 0;
+    vbdev_ocf_flush_for_rpc(vbdev, flush_cb, &req);
+
+    while (!req.complete) {
+        spdk_thread_poll(spdk_get_thread(), 0, 0);
+    }
+
+    status = req.status;
+    if (status) {
+        spdk_jsonrpc_send_error_response_fmt(request,
+                SPDK_JSONRPC_ERROR_INTERNAL_ERROR,
+                "Could not flush OCF vbdev: %s",
+                spdk_strerror(-status));
+    } else {
+        spdk_jsonrpc_send_bool_response(request, true);
+    }
+end:
+    free_rpc_bdev_ocf_flush(&req);
+}
+SPDK_RPC_REGISTER("bdev_ocf_flush", rpc_bdev_ocf_flush, SPDK_RPC_RUNTIME)
+
+/* Structure to hold the parameters for this RPC method. */
 struct rpc_bdev_ocf_get_stats {
 	char *name;             /* main vbdev name */
 };

@@ -347,6 +347,15 @@ if __name__ == "__main__":
                    help='Sequential cutoff policy')
     p.set_defaults(func=bdev_ocf_set_seqcutoff)
 
+    def bdev_ocf_flush(args):
+        rpc.bdev.bdev_ocf_flush(args.client,
+                                name=args.name)
+
+    p = subparsers.add_parser('bdev_ocf_flush', help='Flush an OCF block device')
+    p.add_argument('name', help='Name of OCF bdev')
+    p.set_defaults(func=bdev_ocf_flush)
+
+
     def bdev_malloc_create(args):
         num_blocks = (args.total_size * 1024 * 1024) // args.block_size
         print_json(rpc.bdev.bdev_malloc_create(args.client,

@@ -357,6 +357,61 @@ flush_vbdev(struct vbdev_ocf *vbdev)
 	ocf_mngt_cache_lock(vbdev->ocf_cache, flush_vbdev_cache_lock_cmpl, vbdev);
 }
 
+struct flush_arg {
+    struct vbdev_ocf *vbdev;
+    void (*cb)(void *, int);
+    void *cb_arg;
+};
+
+static void
+flush_vbdev_cmpl_for_rpc(ocf_cache_t cache, void *priv, int error)
+{
+    struct flush_arg *fa = (struct flush_arg *)priv;
+
+    ocf_mngt_cache_unlock(cache);
+    vbdev_ocf_mngt_continue(fa->vbdev, error);
+    fa->cb(fa->cb_arg, error);
+    env_free(fa);
+}
+
+static void
+flush_vbdev_cache_lock_cmpl_for_flush_rpc(ocf_cache_t cache, void *priv,
+        int error)
+{
+    struct flush_arg *fa = (struct flush_arg *)priv;
+    struct vbdev_ocf *vbdev = fa->vbdev;
+
+    if (error) {
+        SPDK_ERRLOG("Error %d, can not lock cache instance %s\n",
+                error, vbdev->name);
+        vbdev_ocf_mngt_continue(vbdev, error);
+        fa->cb(priv, error);
+        env_free(fa);
+        return;
+    }
+
+    ocf_mngt_cache_flush(vbdev->ocf_cache, flush_vbdev_cmpl_for_rpc, priv);
+}
+
+void
+vbdev_ocf_flush_for_rpc(struct vbdev_ocf *vbdev, void (*cb)(void *, int),        
+        void *cb_arg)                                                    
+{                                                                               
+    struct flush_arg *fa;
+
+    if (!is_ocf_cache_running(vbdev)) {
+        vbdev_ocf_mngt_continue(vbdev, -EINVAL);
+        cb(cb_arg, -EINVAL);
+        return;
+    }
+    fa = (struct flush_arg *)env_vmalloc(sizeof(*fa));
+    fa->vbdev = vbdev;
+    fa->cb = cb;
+    fa->cb_arg = cb_arg;
+    ocf_mngt_cache_lock(vbdev->ocf_cache,
+            flush_vbdev_cache_lock_cmpl_for_flush_rpc, fa);
+}
+
 /* Procedures called during dirty unregister */
 vbdev_ocf_mngt_fn unregister_path_dirty[] = {
 	flush_vbdev,
