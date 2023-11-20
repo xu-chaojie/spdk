@@ -459,6 +459,9 @@ struct spdk_bdev {
 	 */
 	bool media_events;
 
+    /*media is write protected or not */
+    bool write_protected;
+
 	/**
 	 * Pointer to the bdev module that registered this bdev.
 	 */

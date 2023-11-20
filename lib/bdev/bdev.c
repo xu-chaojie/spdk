@@ -7690,6 +7690,13 @@ spdk_bdev_get_memory_domains(struct spdk_bdev *bdev, struct spdk_memory_domain *
 	return 0;
 }
 
+bool spdk_bdev_get_write_protected(struct spdk_bdev *bdev) {
+    if (!bdev) {
+        return false;
+    }
+    return bdev->write_protected;
+}
+
 SPDK_LOG_REGISTER_COMPONENT(bdev)
 
 SPDK_TRACE_REGISTER_FN(bdev_trace, "bdev", TRACE_GROUP_BDEV)

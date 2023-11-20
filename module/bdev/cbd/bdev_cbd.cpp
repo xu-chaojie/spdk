@@ -64,6 +64,7 @@ struct bdev_cbd {
 	int exclusive;
 	int curve_fd;
 	int64_t curve_size;
+    bool readonly;
 
 	pthread_mutex_t mutex;
 	struct spdk_thread *main_td;
@@ -166,7 +167,7 @@ bdev_cbd_free(struct bdev_cbd *cbd)
 }
 
 static int
-curvedev_get_path(const char *curve_path, char *path) 
+curvedev_get_path(const char *curve_path, char *path)
 {
 	char *p = NULL;
 
@@ -212,6 +213,7 @@ bdev_cbd_init_context(void *arg)
         return NULL;
     }
 	cbd->curve_size = statInfo.length;
+    cbd->readonly = statInfo.readonly;
 	if (cbd->curve_size < 0) {
 		g_curve->Close(curve_fd);
 		SPDK_ERRLOG("Failed to StateFile %s\n", path);
@@ -768,6 +770,7 @@ bdev_cbd_create(struct spdk_bdev **bdev, const char *name,
 	cbd->disk.ctxt = cbd;
 	cbd->disk.fn_table = &cbd_fn_table;
 	cbd->disk.module = &cbd_if;
+    cbd->disk.write_protected = cbd->readonly;
 
 	SPDK_NOTICELOG("Add cbd dev %s, volume %s\n", cbd->disk.name, cbd_name);
 

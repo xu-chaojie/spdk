@@ -85,6 +85,13 @@ spdk_bdev_get_num_blocks(const struct spdk_bdev *bdev)
 	return g_test_bdev_num_blocks;
 }
 
+bool spdk_bdev_get_write_protected(struct spdk_bdev *bdev) {
+    if (!bdev) {
+        return false;
+    }
+    return bdev->write_protected;
+}
+
 DEFINE_STUB(spdk_bdev_get_product_name, const char *,
 	    (const struct spdk_bdev *bdev), "test product");
 

@@ -394,9 +394,9 @@ flush_vbdev_cache_lock_cmpl_for_flush_rpc(ocf_cache_t cache, void *priv,
 }
 
 void
-vbdev_ocf_flush_for_rpc(struct vbdev_ocf *vbdev, void (*cb)(void *, int),        
-        void *cb_arg)                                                    
-{                                                                               
+vbdev_ocf_flush_for_rpc(struct vbdev_ocf *vbdev, void (*cb)(void *, int),
+        void *cb_arg)
+{
     struct flush_arg *fa;
 
     if (!is_ocf_cache_running(vbdev)) {
@@ -1007,6 +1007,9 @@ finish_register(struct vbdev_ocf *vbdev)
 	vbdev->exp_bdev.ctxt = vbdev;
 	vbdev->exp_bdev.fn_table = &cache_dev_fn_table;
 	vbdev->exp_bdev.module = &ocf_if;
+    vbdev->exp_bdev.write_protected =
+        vbdev->core.bdev->write_protected |
+        vbdev->cache.bdev->write_protected;
 
 	/* Finally register vbdev in SPDK */
 	spdk_io_device_register(vbdev, io_device_create_cb, io_device_destroy_cb,

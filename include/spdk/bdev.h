@@ -1894,6 +1894,14 @@ size_t spdk_bdev_get_media_events(struct spdk_bdev_desc *bdev_desc,
 int spdk_bdev_get_memory_domains(struct spdk_bdev *bdev, struct spdk_memory_domain **domains,
 				 int array_size);
 
+/**
+ * Get write protected.
+ *
+ * \param bdev Block device.
+ * \return write proteced or not.
+ */
+bool spdk_bdev_get_write_protected(struct spdk_bdev *bdev);
+
 #ifdef __cplusplus
 }
 #endif

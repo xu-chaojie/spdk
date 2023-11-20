@@ -1112,16 +1112,24 @@ bdev_scsi_mode_sense(struct spdk_bdev *bdev, int md,
 		return total;
 	}
 
+    bool write_protected = spdk_bdev_get_write_protected(bdev);
+
 	hdr = &data[0];
 	if (hlen == 4) {
 		hdr[0] = total - 1;            /* Mode Data Length */
 		hdr[1] = 0;                    /* Medium Type */
-		hdr[2] = 0;                    /* Device-Specific Parameter */
+        hdr[2] = 0; /* Device-Specific Parameter */
+        if (write_protected) {
+		    hdr[2] |= 0x80;                    /* write protected */
+        }
 		hdr[3] = blen;                 /* Block Descriptor Length */
 	} else {
 		to_be16(&hdr[0], total - 2);   /* Mode Data Length */
 		hdr[2] = 0;                    /* Medium Type */
-		hdr[3] = 0;                    /* Device-Specific Parameter */
+        hdr[3] = 0; /* Device-Specific Parameter */
+        if (write_protected) {
+		    hdr[3] |= 0x80;                    /* write protected */
+        }
 		hdr[4] = llbaa ? 0x1 : 0;      /* Long/short LBA */
 		hdr[5] = 0;                    /* Reserved */
 		to_be16(&hdr[6], blen);        /* Block Descriptor Length */
@@ -1547,6 +1555,24 @@ bdev_scsi_process_block(struct spdk_scsi_task *task)
 	uint32_t xfer_len;
 	uint32_t len = 0;
 	uint8_t *cdb = task->cdb;
+
+	bool write_protected = spdk_bdev_get_write_protected(bdev);
+	if (write_protected) {
+		switch(cdb[0]) {
+		case SPDK_SBC_WRITE_6:
+		case SPDK_SBC_WRITE_10:
+		case SPDK_SBC_WRITE_12:
+		case SPDK_SBC_WRITE_16:
+		case SPDK_SBC_UNMAP:
+			/* following code duplicated from bdev_scsi_readwrite() */
+			task->data_transferred = 0;
+			spdk_scsi_task_set_status(task, SPDK_SCSI_STATUS_CHECK_CONDITION,
+				  SPDK_SCSI_SENSE_DATA_PROTECT,
+			 	  SPDK_SCSI_ASC_WRITE_PROTECTED,
+				  SPDK_SCSI_ASCQ_CAUSE_NOT_REPORTABLE);
+			return SPDK_SCSI_TASK_COMPLETE;
+		}
+	}
 
 	/* XXX: We need to support FUA bit for writes! */
 	switch (cdb[0]) {
